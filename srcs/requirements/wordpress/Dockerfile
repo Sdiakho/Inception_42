@@ -1,6 +1,7 @@
 FROM alpine:3.24.1
 
 COPY ./entrypoint.sh /
+COPY nginx.conf /etc/nginx/nginx.conf
 RUN chmod +x /entrypoint.sh
 
 RUN apk --no-cache add php php-fpm php-mysqli php-phar php-mbstring curl mariadb-client
