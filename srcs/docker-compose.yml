@@ -1,0 +1,78 @@
+name: inception
+services:
+  nginx:
+    build:
+      context: ./requirements/nginx
+      target: nginx
+      depends_on:
+        wordpress:
+          condition: service_healthy
+      restart: always
+      env_file:
+        - ./.env
+      ports:
+        - "443:443"
+      networks:
+        - inception_network
+      volumes:
+        - wordpress_data:/var/www/html
+
+  wordpress:
+    build:
+      context: ./requirements/wordpress
+      target: wordpress
+      depends_on:
+        mariadb:
+          condition: service_healthy
+      restart: always
+      env_file:
+        - ./.env
+      networks:
+        - inception_network
+      expose:
+        - "9000"
+      volumes:
+        - wordpress_data:/var/www/html
+      healthcheck:
+        test: ["CMD", "nc", "-z", "127.0.0.1", "9000"]
+        interval: 10s
+        timeout: 5s
+        retries: 10
+
+  mariadb:
+    build:
+      context: ./requirements/mariadb
+      target: mariadb
+      restart: always
+      env_file:
+        - ./.env
+      expose:
+        - "3306"
+      networks:
+        - inception_network
+      volumes:
+        - mariadb_data:/var/lib/mysql
+      healthcheck:
+        test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+        interval: 10s
+        timeout: 5s
+        retries: 10
+
+volumes:
+  mariadb_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/sdiakho/data/mariadb
+  wordpress_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/sdiakho/data/wordpress
+networks:
+  inception_network:
+    driver: bridge
+
+
